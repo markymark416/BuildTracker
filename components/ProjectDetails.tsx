@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { ConstructionProject } from '../types/construction';
+import { PhotoUpload } from './PhotoUpload';
+import { Comments } from './Comments';
+import { FavoriteButton } from './Favorites';
 
 interface ProjectDetailsProps {
   project: ConstructionProject;
@@ -10,6 +13,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [beforeAfterSlider, setBeforeAfterSlider] = useState(50);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(project.isFollowing || false);
 
   const getPhaseColor = (status: string) => {
     if (status === 'completed') return 'bg-green-500';
@@ -21,6 +27,23 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
     if (status === 'completed') return 'text-green-400';
     if (status === 'active') return 'text-yellow-400';
     return 'text-slate-500';
+  };
+
+  const handleFollow = () => {
+    setIsFollowing(!isFollowing);
+    // In production, save to backend
+    alert(isFollowing ? 'Unfollowed project' : 'Following project! You\'ll get notifications for updates.');
+  };
+
+  const handlePhotoUpload = (photoUrl: string) => {
+    // In production, add to project.images
+    console.log('Photo uploaded:', photoUrl);
+  };
+
+  const handleAddComment = (text: string) => {
+    // In production, save to backend
+    console.log('New comment:', text);
+    alert('Comment posted! (Demo mode)');
   };
 
   return (
@@ -35,6 +58,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
         </button>
         <h2 className="font-bold text-sm">Project Details</h2>
         <div className="flex items-center gap-2">
+          <FavoriteButton projectId={project.id} size="sm" />
           <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
             <span className="material-symbols-outlined">share</span>
           </button>
@@ -44,7 +68,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
         </div>
       </div>
 
-      {/* Hero Image with Status Badge */}
+      {/* Hero Image */}
       <div className="relative h-64 bg-slate-800">
         {!showBeforeAfter ? (
           <img
@@ -53,7 +77,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
             className="w-full h-full object-cover"
           />
         ) : (
-          /* Before/After Slider */
           <div className="relative w-full h-full overflow-hidden">
             <img
               src={project.afterImage || 'https://via.placeholder.com/800x400?text=After'}
@@ -91,14 +114,12 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           </div>
         )}
 
-        {/* Status Badge */}
         <div className="absolute top-4 left-4">
           <span className="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold">
             {project.status}
           </span>
         </div>
 
-        {/* Settings Icon */}
         <button
           className="absolute top-4 right-4 w-10 h-10 bg-slate-800/70 backdrop-blur rounded-full flex items-center justify-center hover:bg-slate-700/70 transition-colors"
           onClick={() => setShowBeforeAfter(!showBeforeAfter)}
@@ -106,7 +127,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           <span className="material-symbols-outlined text-white">compare</span>
         </button>
 
-        {/* Image Navigation Dots */}
         {!showBeforeAfter && project.images.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {project.images.map((_, index) => (
@@ -122,7 +142,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
         )}
       </div>
 
-      {/* Project Info */}
       <div className="p-4 space-y-4">
         {/* Title & Address */}
         <div>
@@ -142,7 +161,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
             </span>
           </div>
 
-          {/* Phase Timeline */}
           <div className="flex items-center justify-between mb-3">
             {project.phases.map((phase, index) => (
               <React.Fragment key={phase.id}>
@@ -172,7 +190,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           </div>
         </div>
 
-        {/* Official Data Section */}
+        {/* Official Data */}
         <div className="bg-slate-800/50 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <span className="material-symbols-outlined text-blue-400">verified</span>
@@ -194,18 +212,34 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
             </div>
             <div>
               <p className="text-xs text-slate-500 mb-1">TARGET DATE</p>
-              <p className="font-bold text-sm">{new Date(project.estimatedCompletion).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+              <p className="font-bold text-sm">
+                {new Date(project.estimatedCompletion).toLocaleDateString('en-US', { 
+                  month: 'short', day: 'numeric', year: 'numeric' 
+                })}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <button className="flex-1 py-3 bg-primary/20 text-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/30 transition-colors border border-primary/30">
-            <span className="material-symbols-outlined">notifications</span>
-            Follow
+          <button 
+            onClick={handleFollow}
+            className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${
+              isFollowing 
+                ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' 
+                : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
+            }`}
+          >
+            <span className="material-symbols-outlined">
+              {isFollowing ? 'notifications_active' : 'notifications'}
+            </span>
+            {isFollowing ? 'Following' : 'Follow'}
           </button>
-          <button className="flex-1 py-3 bg-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
+          <button 
+            onClick={() => setShowPhotoUpload(true)}
+            className="flex-1 py-3 bg-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+          >
             <span className="material-symbols-outlined">add_photo_alternate</span>
             Post Update
           </button>
@@ -229,49 +263,44 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           </div>
         )}
 
-        {/* User Updates Feed */}
+        {/* Comments Toggle */}
         <div>
-          <h3 className="text-sm font-bold mb-3">Community Updates</h3>
-          <div className="space-y-3">
-            {project.updates.map((update) => (
-              <div key={update.id} className="bg-slate-800 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-slate-400">person</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-sm">{update.username}</span>
-                      <span className="text-xs text-slate-500">
-                        {new Date(update.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-300">{update.text}</p>
-                    {update.images && update.images.length > 0 && (
-                      <div className="mt-2 flex gap-2">
-                        {update.images.map((img, idx) => (
-                          <img
-                            key={idx}
-                            src={img}
-                            alt="Update"
-                            className="w-20 h-20 rounded-lg object-cover"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-4 mt-2">
-                      <button className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">favorite_border</span>
-                        {update.likes}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex items-center gap-2 text-sm font-bold text-white hover:text-primary transition-colors"
+          >
+            <span className="material-symbols-outlined">chat_bubble</span>
+            Community Comments ({project.updates.length})
+            <span className="material-symbols-outlined">
+              {showComments ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
         </div>
+
+        {/* Comments Section */}
+        {showComments && (
+          <Comments
+            projectId={project.id}
+            comments={project.updates.map(u => ({
+              id: u.id,
+              username: u.username,
+              text: u.text,
+              timestamp: u.timestamp,
+              likes: u.likes
+            }))}
+            onAddComment={handleAddComment}
+          />
+        )}
       </div>
+
+      {/* Photo Upload Modal */}
+      {showPhotoUpload && (
+        <PhotoUpload
+          projectId={project.id}
+          onUploadComplete={handlePhotoUpload}
+          onClose={() => setShowPhotoUpload(false)}
+        />
+      )}
     </div>
   );
 };
