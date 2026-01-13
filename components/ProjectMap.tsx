@@ -1,257 +1,297 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { ConstructionProject, FilterType } from '../types/construction';
+// File: api/construction-projects.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Fix Leaflet default icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-interface ProjectMapProps {
-  selectedProject: ConstructionProject | null;
-  onProjectSelect: (project: ConstructionProject) => void;
-}
-
-export const ProjectMap: React.FC<ProjectMapProps> = ({ selectedProject, onProjectSelect }) => {
-  const [projects, setProjects] = useState<ConstructionProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [userLocation, setUserLocation] = useState<[number, number]>([43.6532, -79.3832]);
-  const [hoveredProject, setHoveredProject] = useState<ConstructionProject | null>(null);
-
-  useEffect(() => {
-    // Get user location
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
+  // Return rich demo data for Toronto
+  const projects = [
+    {
+      id: '1',
+      name: 'The Meridian Residences',
+      address: '123 King St W, Toronto',
+      projectType: 'New Build',
+      description: '12-storey luxury residential condo with retail on ground floor',
+      value: 15000000,
+      permitNumber: 'BP-2023-39413',
+      permitDate: '2023-06-15',
+      status: 'ACTIVE PERMIT',
+      latitude: 43.6426,
+      longitude: -79.3871,
+      contractor: 'Elite Builders Inc',
+      estimatedCompletion: '2026-10-15',
+      currentPhase: {
+        id: 'phase-3',
+        name: 'FOUNDATION',
+        label: 'Foundation',
+        progress: 65,
+        status: 'active'
+      },
+      phases: [
+        { id: 'phase-1', name: 'PLANNING', label: 'Planning', progress: 100, status: 'completed' },
+        { id: 'phase-2', name: 'EXCAVATION', label: 'Excavation', progress: 100, status: 'completed' },
+        { id: 'phase-3', name: 'FOUNDATION', label: 'Foundation', progress: 65, status: 'active' },
+        { id: 'phase-4', name: 'FRAMING', label: 'Framing', progress: 0, status: 'upcoming' },
+        { id: 'phase-5', name: 'FINISHING', label: 'Finishing', progress: 0, status: 'upcoming' }
+      ],
+      images: [
+        {
+          id: 'img-1',
+          url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+          caption: 'Foundation work in progress',
+          uploadedBy: 'Construction Watch',
+          uploadedAt: '2025-01-10T14:30:00Z',
+          type: 'progress'
+        },
+        {
+          id: 'img-2',
+          url: 'https://images.unsplash.com/photo-1590496793907-4af9d1f8c5db?w=800&h=600&fit=crop',
+          caption: 'Concrete pouring',
+          uploadedBy: 'Local Neighbor',
+          uploadedAt: '2025-01-08T09:15:00Z',
+          type: 'progress'
         }
-      );
+      ],
+      beforeImage: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+      afterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+      updates: [
+        {
+          id: 'update-1',
+          username: 'Local Neighbor',
+          text: 'Foundation is complete! Framing crew arrives Monday. Great progress this week.',
+          timestamp: '2025-01-12T18:00:00Z',
+          likes: 24
+        },
+        {
+          id: 'update-2',
+          username: 'Construction Watch',
+          text: 'Concrete dried faster than expected. Should be ahead of schedule.',
+          timestamp: '2025-01-10T12:30:00Z',
+          likes: 15
+        }
+      ],
+      followers: 142,
+      isFollowing: false
+    },
+    {
+      id: '2',
+      name: 'Queen Street Heritage Restoration',
+      address: '456 Queen St E, Toronto',
+      projectType: 'Renovation',
+      description: 'Historic commercial building facade restoration and interior modernization',
+      value: 2500000,
+      permitNumber: 'BP-2024-12856',
+      permitDate: '2024-08-20',
+      status: 'ACTIVE PERMIT',
+      latitude: 43.6571,
+      longitude: -79.3633,
+      contractor: 'Heritage Restorations Ltd',
+      estimatedCompletion: '2026-03-20',
+      currentPhase: {
+        id: 'phase-5',
+        name: 'FINISHING',
+        label: 'Finishing',
+        progress: 85,
+        status: 'active'
+      },
+      phases: [
+        { id: 'phase-1', name: 'PLANNING', label: 'Planning', progress: 100, status: 'completed' },
+        { id: 'phase-2', name: 'EXCAVATION', label: 'Excavation', progress: 100, status: 'completed' },
+        { id: 'phase-3', name: 'FOUNDATION', label: 'Foundation', progress: 100, status: 'completed' },
+        { id: 'phase-4', name: 'FRAMING', label: 'Framing', progress: 100, status: 'completed' },
+        { id: 'phase-5', name: 'FINISHING', label: 'Finishing', progress: 85, status: 'active' }
+      ],
+      images: [
+        {
+          id: 'img-1',
+          url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
+          caption: 'Exterior restoration',
+          uploadedBy: 'Heritage Lover',
+          uploadedAt: '2025-01-11T16:00:00Z',
+          type: 'progress'
+        }
+      ],
+      beforeImage: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+      afterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+      updates: [
+        {
+          id: 'update-1',
+          username: 'Heritage Lover',
+          text: 'Beautiful restoration work! The original brickwork is being preserved perfectly.',
+          timestamp: '2025-01-11T16:00:00Z',
+          likes: 38
+        }
+      ],
+      followers: 89,
+      isFollowing: false
+    },
+    {
+      id: '3',
+      name: 'Yonge Street Mixed-Use Development',
+      address: '789 Yonge St, Toronto',
+      projectType: 'New Build',
+      description: '5-storey mixed-use development with commercial ground floor and residential above',
+      value: 8000000,
+      permitNumber: 'BP-2024-15234',
+      permitDate: '2024-09-01',
+      status: 'ACTIVE PERMIT',
+      latitude: 43.6634,
+      longitude: -79.3808,
+      contractor: 'Urban Builders Corp',
+      estimatedCompletion: '2026-12-01',
+      currentPhase: {
+        id: 'phase-2',
+        name: 'EXCAVATION',
+        label: 'Excavation',
+        progress: 45,
+        status: 'active'
+      },
+      phases: [
+        { id: 'phase-1', name: 'PLANNING', label: 'Planning', progress: 100, status: 'completed' },
+        { id: 'phase-2', name: 'EXCAVATION', label: 'Excavation', progress: 45, status: 'active' },
+        { id: 'phase-3', name: 'FOUNDATION', label: 'Foundation', progress: 0, status: 'upcoming' },
+        { id: 'phase-4', name: 'FRAMING', label: 'Framing', progress: 0, status: 'upcoming' },
+        { id: 'phase-5', name: 'FINISHING', label: 'Finishing', progress: 0, status: 'upcoming' }
+      ],
+      images: [
+        {
+          id: 'img-1',
+          url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=600&fit=crop',
+          caption: 'Excavation underway',
+          uploadedBy: 'Community Member',
+          uploadedAt: '2025-01-09T11:00:00Z',
+          type: 'progress'
+        }
+      ],
+      beforeImage: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+      afterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+      updates: [
+        {
+          id: 'update-1',
+          username: 'Community Member',
+          text: 'Excavation progressing well. Hitting bedrock next week.',
+          timestamp: '2025-01-09T11:00:00Z',
+          likes: 12
+        }
+      ],
+      followers: 67,
+      isFollowing: false
+    },
+    {
+      id: '4',
+      name: 'Distillery District Lofts',
+      address: '15 Trinity St, Toronto',
+      projectType: 'Renovation',
+      description: 'Historic warehouse conversion to luxury loft condos',
+      value: 12000000,
+      permitNumber: 'BP-2023-45678',
+      permitDate: '2023-11-10',
+      status: 'ACTIVE PERMIT',
+      latitude: 43.6503,
+      longitude: -79.3598,
+      contractor: 'Loft Conversions Inc',
+      estimatedCompletion: '2026-06-30',
+      currentPhase: {
+        id: 'phase-4',
+        name: 'FRAMING',
+        label: 'Framing',
+        progress: 55,
+        status: 'active'
+      },
+      phases: [
+        { id: 'phase-1', name: 'PLANNING', label: 'Planning', progress: 100, status: 'completed' },
+        { id: 'phase-2', name: 'EXCAVATION', label: 'Excavation', progress: 100, status: 'completed' },
+        { id: 'phase-3', name: 'FOUNDATION', label: 'Foundation', progress: 100, status: 'completed' },
+        { id: 'phase-4', name: 'FRAMING', label: 'Framing', progress: 55, status: 'active' },
+        { id: 'phase-5', name: 'FINISHING', label: 'Finishing', progress: 0, status: 'upcoming' }
+      ],
+      images: [
+        {
+          id: 'img-1',
+          url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
+          caption: 'Interior framing',
+          uploadedBy: 'Architecture Fan',
+          uploadedAt: '2025-01-13T10:00:00Z',
+          type: 'progress'
+        }
+      ],
+      beforeImage: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+      afterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+      updates: [
+        {
+          id: 'update-1',
+          username: 'Architecture Fan',
+          text: 'Love how they preserved the original brick walls! This will be stunning.',
+          timestamp: '2025-01-13T10:00:00Z',
+          likes: 56
+        }
+      ],
+      followers: 234,
+      isFollowing: false
+    },
+    {
+      id: '5',
+      name: 'Harbourfront Towers',
+      address: '88 Queens Quay W, Toronto',
+      projectType: 'New Build',
+      description: 'Twin 40-storey luxury waterfront residential towers',
+      value: 75000000,
+      permitNumber: 'BP-2023-28901',
+      permitDate: '2023-04-01',
+      status: 'ACTIVE PERMIT',
+      latitude: 43.6387,
+      longitude: -79.3816,
+      contractor: 'Skyline Construction Group',
+      estimatedCompletion: '2027-08-15',
+      currentPhase: {
+        id: 'phase-4',
+        name: 'FRAMING',
+        label: 'Framing',
+        progress: 30,
+        status: 'active'
+      },
+      phases: [
+        { id: 'phase-1', name: 'PLANNING', label: 'Planning', progress: 100, status: 'completed' },
+        { id: 'phase-2', name: 'EXCAVATION', label: 'Excavation', progress: 100, status: 'completed' },
+        { id: 'phase-3', name: 'FOUNDATION', label: 'Foundation', progress: 100, status: 'completed' },
+        { id: 'phase-4', name: 'FRAMING', label: 'Framing', progress: 30, status: 'active' },
+        { id: 'phase-5', name: 'FINISHING', label: 'Finishing', progress: 0, status: 'upcoming' }
+      ],
+      images: [
+        {
+          id: 'img-1',
+          url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+          caption: 'Tower construction progress',
+          uploadedBy: 'Waterfront Resident',
+          uploadedAt: '2025-01-12T15:00:00Z',
+          type: 'progress'
+        }
+      ],
+      beforeImage: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+      afterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
+      updates: [
+        {
+          id: 'update-1',
+          username: 'Waterfront Resident',
+          text: 'Construction is moving fast! Already at floor 12 on Tower A.',
+          timestamp: '2025-01-12T15:00:00Z',
+          likes: 45
+        }
+      ],
+      followers: 312,
+      isFollowing: false
     }
+  ];
 
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/construction-projects');
-      if (response.ok) {
-        const data = await response.json();
-        setProjects(data.projects);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createCustomMarker = (type: string, isSelected: boolean) => {
-    const colors = {
-      'New Build': '#3b82f6',
-      'Renovation': '#f59e0b',
-      'Demolition': '#ef4444',
-      'Addition': '#8b5cf6'
-    };
-    const color = colors[type as keyof typeof colors] || '#3b82f6';
-    
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="
-          background: ${isSelected ? '#fbbf24' : color};
-          width: ${isSelected ? '36px' : '28px'};
-          height: ${isSelected ? '36px' : '28px'};
-          border-radius: 50%;
-          border: 3px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform: ${isSelected ? 'scale(1.2)' : 'scale(1)'};
-          transition: all 0.2s;
-        ">
-          <span style="font-size: ${isSelected ? '16px' : '14px'}">🏗️</span>
-        </div>
-      `,
-      iconSize: [isSelected ? 36 : 28, isSelected ? 36 : 28],
-      iconAnchor: [isSelected ? 18 : 14, isSelected ? 18 : 14],
-    });
-  };
-
-  const filteredProjects = projects.filter(project => {
-    if (filter === 'all') return true;
-    if (filter === 'new-build') return project.projectType === 'New Build';
-    if (filter === 'renovation') return project.projectType === 'Renovation';
-    // 'near-me' would use geolocation distance calculation
-    return true;
+  return res.status(200).json({
+    success: true,
+    count: projects.length,
+    projects: projects,
+    source: 'Demo Data - Toronto',
+    lastUpdated: new Date().toISOString()
   });
-
-  return (
-    <div className="relative h-full w-full bg-slate-900">
-      {/* Search and Filters */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] space-y-3">
-        {/* Search Bar */}
-        <div className="bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-3 shadow-xl">
-          <span className="material-symbols-outlined text-slate-400">search</span>
-          <input
-            type="text"
-            placeholder="Search address or zip code"
-            className="flex-1 bg-transparent text-white placeholder-slate-500 outline-none text-sm"
-          />
-        </div>
-
-        {/* Filter Chips */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter('near-me')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-              filter === 'near-me'
-                ? 'bg-primary text-white'
-                : 'bg-slate-800 text-white hover:bg-slate-700'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg">near_me</span>
-            Near Me
-          </button>
-          <button
-            onClick={() => setFilter('new-build')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-              filter === 'new-build'
-                ? 'bg-primary text-white'
-                : 'bg-slate-800 text-white hover:bg-slate-700'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg">apartment</span>
-            New Build
-          </button>
-          <button
-            onClick={() => setFilter('renovation')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-              filter === 'renovation'
-                ? 'bg-primary text-white'
-                : 'bg-slate-800 text-white hover:bg-slate-700'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg">home_repair_service</span>
-            Renovation
-          </button>
-        </div>
-      </div>
-
-      {/* Map */}
-      <MapContainer
-        center={userLocation}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-        className="z-0"
-      >
-        <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {filteredProjects.map((project) => (
-          <Marker
-            key={project.id}
-            position={[project.latitude, project.longitude]}
-            icon={createCustomMarker(project.projectType, selectedProject?.id === project.id)}
-            eventHandlers={{
-              click: () => onProjectSelect(project),
-              mouseover: () => setHoveredProject(project),
-              mouseout: () => setHoveredProject(null),
-            }}
-          />
-        ))}
-      </MapContainer>
-
-      {/* Bottom Sheet Preview */}
-      {(hoveredProject || selectedProject) && (
-        <div className="absolute bottom-4 left-4 right-4 z-[1000]">
-          <div className="bg-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="flex gap-3 p-3">
-              {/* Thumbnail */}
-              <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-700 flex-shrink-0 relative">
-                {(hoveredProject || selectedProject)?.images[0] ? (
-                  <img
-                    src={(hoveredProject || selectedProject)!.images[0].url}
-                    alt="Project"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">
-                    🏗️
-                  </div>
-                )}
-                <div className="absolute top-2 left-2">
-                  <span className="text-[8px] font-black bg-yellow-500 text-slate-900 px-2 py-0.5 rounded">
-                    {(hoveredProject || selectedProject)?.projectType.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white text-sm truncate">
-                      {(hoveredProject || selectedProject)?.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 truncate">
-                      {(hoveredProject || selectedProject)?.address}
-                    </p>
-                  </div>
-                  <span className="text-xs text-slate-400 whitespace-nowrap">0.2 mi</span>
-                </div>
-
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[9px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase">
-                    In Real-Time
-                  </span>
-                  <span className="text-[9px] text-slate-500">Last update: 2h ago</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <button
-              onClick={() => onProjectSelect((hoveredProject || selectedProject)!)}
-              className="w-full bg-primary hover:bg-primary/90 text-white py-3 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors"
-            >
-              <span className="material-symbols-outlined text-lg">visibility</span>
-              View Project Details
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Zoom Controls */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-[999] flex flex-col gap-2">
-        <button className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white shadow-lg transition-colors">
-          <span className="material-symbols-outlined">add</span>
-        </button>
-        <button className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white shadow-lg transition-colors">
-          <span className="material-symbols-outlined">remove</span>
-        </button>
-        <button className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white shadow-lg transition-colors">
-          <span className="material-symbols-outlined">my_location</span>
-        </button>
-      </div>
-
-      {loading && (
-        <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-[1001]">
-          <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-white font-bold">Loading projects...</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+}
